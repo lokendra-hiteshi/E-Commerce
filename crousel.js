@@ -1,15 +1,14 @@
 let carouselItems;
 let currentIndex = 0;
+let autoSlideInterval;
 
 function showSlide(index) {
-  // Hide all carousel items
   if (!carouselItems || carouselItems.length === 0) return;
 
   carouselItems?.forEach((item) => {
     item.style.display = "none";
   });
 
-  // Show the slide at the specified index
   carouselItems[index].style.display = "block";
 }
 
@@ -22,6 +21,11 @@ function previousSlide() {
   currentIndex =
     (currentIndex - 1 + carouselItems.length) % carouselItems.length;
   showSlide(currentIndex);
+}
+
+function resetAutoSlide() {
+  clearInterval(autoSlideInterval);
+  autoSlideInterval = setInterval(nextSlide, 5000);
 }
 
 export function crouselComponent(products) {
@@ -64,11 +68,9 @@ export function crouselComponent(products) {
     const discContainer = document.createElement("div");
     discContainer.style.margin = "0 10px";
 
-    // Title
     let title = document.createElement("h2");
     title.textContent = product.title;
 
-    // Description
     let description = document.createElement("p");
     description.textContent = product.description;
 
@@ -149,10 +151,17 @@ export function crouselComponent(products) {
 
   carouselItems = document.querySelectorAll(".carousel-item");
 
-  // Show the first slide initially
   showSlide(currentIndex);
 
-  // Set up event listeners for next and previous buttons
-  document.getElementById("nextBtn").addEventListener("click", nextSlide);
-  document.getElementById("prevBtn").addEventListener("click", previousSlide);
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    nextSlide();
+    resetAutoSlide();
+  });
+
+  document.getElementById("prevBtn").addEventListener("click", () => {
+    previousSlide();
+    resetAutoSlide();
+  });
+
+  autoSlideInterval = setInterval(nextSlide, 5000);
 }

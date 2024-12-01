@@ -17,7 +17,7 @@ const fetchProducts = async () => {
 export const initializeApp = async () => {
   let cartItems = JSON.parse(localStorage.getItem("cart")) || [];
   await fetchProducts();
-  headerComponent(cartItems);
+  headerComponent(products, cartItems);
   crouselComponent(products);
   homeComponent(products, cartItems);
 };

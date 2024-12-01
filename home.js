@@ -1,8 +1,12 @@
 import { cartDrawer } from "./header.js";
 
-const updateCart = (product, action) => {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+export const getCart = () => {
+  return cart;
+};
+
+export const updateCart = (product, action) => {
   const productIndex = cart.findIndex((item) => item.id === product.id);
 
   if (action === "add" && productIndex === -1) {
@@ -16,9 +20,12 @@ const updateCart = (product, action) => {
   return cart;
 };
 
-// Function to create the product modal
+export const clearCart = () => {
+  cart = [];
+  localStorage.setItem("cart", JSON.stringify(cart));
+};
+
 export const createModal = (product) => {
-  // Overlay
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
   overlay.style.top = "0";
@@ -31,7 +38,6 @@ export const createModal = (product) => {
   overlay.style.justifyContent = "center";
   overlay.style.zIndex = "1000";
 
-  // Modal content
   const modal = document.createElement("div");
   modal.style.backgroundColor = "#fff";
   modal.style.padding = "20px";
@@ -49,7 +55,6 @@ export const createModal = (product) => {
       text-align: left;
     `;
 
-  // Product Image
   let productImage = document.createElement("img");
   productImage.classList.add("prod-model-img");
   productImage.src = product.thumbnail;
@@ -61,11 +66,9 @@ export const createModal = (product) => {
   const discContainer = document.createElement("div");
   discContainer.classList.add("dics");
 
-  // Title
   const title = document.createElement("h2");
   title.textContent = product.title;
 
-  // Description
   const description = document.createElement("p");
   description.textContent = product.description;
 
@@ -91,7 +94,6 @@ export const createModal = (product) => {
   buyButton.style.borderRadius = "5px";
   buyButton.style.cursor = "pointer";
 
-  // Close button
   const closeButton = document.createElement("button");
   closeButton.textContent = "Close";
   closeButton.style.marginTop = "10px";
@@ -149,75 +151,93 @@ export function homeComponent(products) {
     `;
 
   products.forEach((product) => {
-    const productCard = document.createElement("div");
-    productCard.classList.add("product-card");
-    productCard.style.cssText = `
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          padding: 10px;
-          text-align: center;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          cursor: pointer;
-        `;
-
-    const productImage = document.createElement("img");
-    productImage.src = product.thumbnail;
-    productImage.style.cssText = `
-          width: 100%;
-          height: 150px;
-          object-fit: cover;
-          border-radius: 5px;
-        `;
-
-    const productTitle = document.createElement("p");
-    productTitle.textContent = product.title;
-
-    const inStock = document.createElement("p");
-    if (product.stock) {
-      inStock.textContent = `In stock ${product.stock}`;
-      inStock.style.color = "green";
-    } else {
-      inStock.textContent = `Out of stock`;
-      inStock.style.color = "red";
-    }
-
-    const productPrice = document.createElement("p");
-    productPrice.textContent = `$ ${product.price}`;
-    productPrice.style.fontWeight = "bold";
-
-    const cartButton = document.createElement("button");
-    cartButton.textContent = "Add To Cart";
-    cartButton.style.cssText = `
-          padding: 10px;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-        `;
-
-    // const isProductInCart = cart.some(item => item.id === product.id);
-    // cartIcon.style.background = isProductInCart ? "#FC8F54" : "#78B3CE";
-    cartButton.style.background = "#78B3CE";
-
-    cartButton.onclick = (event) => {
-      event.stopPropagation();
-      // const action = isProductInCart ? "remove" : "add";
-      const updatedCartItems = updateCart(product, "add");
-      // cartIcon.style.background = action === "add" ? "#FC8F54" : "#78B3CE";
-
-      cartDrawer(updatedCartItems, () => homeComponent());
-    };
-    productCard.onclick = () => createModal(product);
-    productCard.append(
-      productImage,
-      productTitle,
-      productPrice,
-      inStock,
-      cartButton
-    );
-    productContainer.appendChild(productCard);
+    productCardFunction(product, productContainer);
   });
 
   homeContainer.appendChild(productContainer);
   home.appendChild(homeContainer);
   container.appendChild(home);
 }
+
+export const productCardFunction = (product, productContainer) => {
+  const productCard = document.createElement("div");
+  productCard.classList.add("product-card");
+  productCard.style.cssText = `
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+      `;
+
+  const productImage = document.createElement("img");
+  productImage.src = product.thumbnail;
+  productImage.style.cssText = `
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 5px;
+      `;
+
+  const productTitle = document.createElement("p");
+  productTitle.textContent = product.title;
+
+  const inStock = document.createElement("p");
+  if (product.stock) {
+    inStock.textContent = `In stock ${product.stock}`;
+    inStock.style.color = "green";
+  } else {
+    inStock.textContent = `Out of stock`;
+    inStock.style.color = "red";
+  }
+
+  const productPrice = document.createElement("p");
+  productPrice.textContent = `$ ${product.price}`;
+  productPrice.style.fontWeight = "bold";
+
+  const cartButton = document.createElement("button");
+  cartButton.style.cssText = `
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+    background-color: red;
+  `;
+
+  const isInCart = () => {
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    return cart.some((item) => item.id === product.id);
+  };
+
+  const updateButtonState = () => {
+    if (isInCart()) {
+      cartButton.textContent = "Remove From Cart";
+      cartButton.style.backgroundColor = "gray";
+    } else {
+      cartButton.textContent = "Add To Cart";
+      cartButton.style.backgroundColor = "red";
+    }
+  };
+
+  updateButtonState();
+
+  cartButton.onclick = (event) => {
+    event.stopPropagation();
+
+    const action = isInCart() ? "remove" : "add";
+    const updatedCartItems = updateCart(product, action);
+    updateButtonState();
+    // cartDrawer(updatedCartItems, () => homeComponent());
+  };
+  productCard.onclick = () => createModal(product);
+  productCard.append(
+    productImage,
+    productTitle,
+    productPrice,
+    inStock,
+    cartButton
+  );
+  productContainer.appendChild(productCard);
+};

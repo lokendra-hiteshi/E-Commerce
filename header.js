@@ -1,7 +1,7 @@
-import { createModal } from "./home.js";
-
+import { createModal, productCardFunction } from "./home.js";
+import { getCart } from "./home.js";
+import { updateCart } from "./home.js";
 const openLoginModel = () => {
-  // Overlay
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
   overlay.style.top = "0";
@@ -14,7 +14,6 @@ const openLoginModel = () => {
   overlay.style.justifyContent = "center";
   overlay.style.zIndex = "1000";
 
-  // Modal content
   const modal = document.createElement("div");
   modal.style.backgroundColor = "#fff";
   modal.style.position = "relative";
@@ -25,7 +24,6 @@ const openLoginModel = () => {
   modal.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
   modal.style.textAlign = "center";
 
-  // Close button
   const closeButton = document.createElement("button");
   closeButton.textContent = "X";
   closeButton.style.postion = "relative";
@@ -93,8 +91,14 @@ const openLoginModel = () => {
   document.body.appendChild(overlay);
 };
 
-export const cartDrawer = (cartItems, onClose) => {
-  // Overlay
+export const cartDrawer = () => {
+  let cartItems = getCart();
+  let existingDrawer = document.getElementById("cart-drawer");
+  if (existingDrawer) {
+    updateCartItemsInDrawer(cartItems);
+    return;
+  }
+
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
   overlay.style.top = "0";
@@ -105,8 +109,17 @@ export const cartDrawer = (cartItems, onClose) => {
   overlay.style.zIndex = "1000";
   overlay.style.transition = "opacity 0.3s ease";
 
-  // Drawer content
+  overlay.onclick = (event) => {
+    if (event.target === overlay) {
+      drawer.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+      }, 300);
+    }
+  };
+
   const drawer = document.createElement("div");
+  drawer.id = "cart-drawer";
   drawer.style.position = "fixed";
   drawer.style.top = "0";
   drawer.style.right = "0";
@@ -120,7 +133,6 @@ export const cartDrawer = (cartItems, onClose) => {
   drawer.style.transform = "translateX(100%)";
   drawer.style.transition = "transform 0.3s ease";
 
-  // Close button
   const closeButton = document.createElement("button");
   closeButton.textContent = "X";
   closeButton.style.position = "absolute";
@@ -135,37 +147,41 @@ export const cartDrawer = (cartItems, onClose) => {
     drawer.style.transform = "translateX(100%)";
     setTimeout(() => {
       document.body.removeChild(overlay);
-      onClose();
     }, 300);
   };
 
-  // Cart title
   const cartTitle = document.createElement("h2");
   cartTitle.textContent = "Your Cart";
   cartTitle.style.marginBottom = "20px";
 
-  // Cart items container
   const cartContent = document.createElement("div");
   cartContent.style.display = "flex";
   cartContent.style.flexDirection = "column";
   cartContent.style.gap = "15px";
 
-  const subtotalContainer = document.createElement("div");
-  subtotalContainer.style.marginTop = "20px";
-  subtotalContainer.style.fontWeight = "bold";
-  subtotalContainer.style.fontSize = "18px";
+  updateCartItemsInDrawer(cartItems, cartContent);
 
-  let subtotal = 0;
+  drawer.appendChild(closeButton);
+  drawer.appendChild(cartTitle);
+  drawer.appendChild(cartContent);
 
-  const updateSubtotal = () => {
-    subtotal = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
-    subtotalContainer.textContent = `Subtotal: $ ${subtotal.toFixed(2)}`;
-  };
+  overlay.appendChild(drawer);
+  document.body.appendChild(overlay);
 
-  cartItems.forEach((item, index) => {
+  setTimeout(() => {
+    drawer.style.transform = "translateX(0)";
+  }, 10);
+};
+
+const updateCartItemsInDrawer = (cartItems, cartContent) => {
+  cartContent.innerHTML = "";
+  let totalAmount = 0;
+
+  cartItems.forEach((item) => {
+    if (!item.quantity) {
+      item.quantity = 1;
+    }
+
     const itemContainer = document.createElement("div");
     itemContainer.style.display = "flex";
     itemContainer.style.position = "relative";
@@ -183,10 +199,8 @@ export const cartDrawer = (cartItems, onClose) => {
     removeItemButton.style.background = "transparent";
 
     removeItemButton.onclick = () => {
-      cartItems = cartItems.filter((i) => i.id !== item.id);
-      localStorage.setItem("cart", JSON.stringify(cartItems));
-      document.body.removeChild(overlay);
-      cartDrawer(cartItems);
+      cartItems = updateCart(item, "remove");
+      updateCartItemsInDrawer(cartItems, cartContent);
     };
 
     const img = document.createElement("img");
@@ -223,10 +237,6 @@ export const cartDrawer = (cartItems, onClose) => {
     quantityControls.style.alignItems = "center";
     quantityControls.style.gap = "10px";
 
-    if (!item.hasOwnProperty("quantity")) {
-      item.quantity = 1;
-    }
-
     const decrementButton = document.createElement("button");
     decrementButton.textContent = "-";
     decrementButton.style.cursor = "pointer";
@@ -243,18 +253,26 @@ export const cartDrawer = (cartItems, onClose) => {
     quantityDisplay.textContent = item.quantity;
     quantityDisplay.style.fontWeight = "bold";
 
+    const subtotalDisplay = document.createElement("p");
+    subtotalDisplay.textContent = `Subtotal: $${(
+      item.price * item.quantity
+    ).toFixed(2)}`;
+    subtotalDisplay.style.fontSize = "14px";
+    subtotalDisplay.style.marginTop = "5px";
+    subtotalDisplay.style.color = "#333";
+
+    totalAmount += item.price * item.quantity;
+
     decrementButton.onclick = () => {
       if (item.quantity > 1) {
         item.quantity--;
-        quantityDisplay.textContent = item.quantity;
-        updateSubtotal();
+        updateCartItemsInDrawer(cartItems, cartContent);
       }
     };
 
     incrementButton.onclick = () => {
       item.quantity++;
-      quantityDisplay.textContent = item.quantity;
-      updateSubtotal();
+      updateCartItemsInDrawer(cartItems, cartContent);
     };
 
     quantityControls.appendChild(decrementButton);
@@ -265,6 +283,7 @@ export const cartDrawer = (cartItems, onClose) => {
     info.appendChild(description);
     info.appendChild(price);
     info.appendChild(quantityControls);
+    info.appendChild(subtotalDisplay);
 
     itemContainer.appendChild(removeItemButton);
     itemContainer.appendChild(img);
@@ -273,24 +292,16 @@ export const cartDrawer = (cartItems, onClose) => {
     cartContent.appendChild(itemContainer);
   });
 
-  updateSubtotal();
-
-  drawer.appendChild(closeButton);
-  drawer.appendChild(cartTitle);
-  drawer.appendChild(cartContent);
-  drawer.appendChild(subtotalContainer);
-
-  // Add to overlay
-  overlay.appendChild(drawer);
-  document.body.appendChild(overlay);
-
-  // Show drawer
-  setTimeout(() => {
-    drawer.style.transform = "translateX(0)";
-  }, 10);
+  const totalDisplay = document.createElement("div");
+  totalDisplay.style.textAlign = "right";
+  totalDisplay.style.marginTop = "20px";
+  totalDisplay.style.fontSize = "16px";
+  totalDisplay.style.fontWeight = "bold";
+  totalDisplay.textContent = `Total: $${totalAmount.toFixed(2)}`;
+  cartContent.appendChild(totalDisplay);
 };
 
-export function headerComponent(cartItems) {
+export function headerComponent(products, cartItems) {
   const container = document.getElementById("root");
 
   const header = document.createElement("div");
@@ -304,8 +315,6 @@ export function headerComponent(cartItems) {
   const headerContainer = document.createElement("div");
   headerContainer.classList.add("header-container");
   headerContainer.id = "header-container";
-
-  // Logo Field
 
   const logo = document.createElement("div");
   logo.classList.add("header-logo");
@@ -326,8 +335,6 @@ export function headerComponent(cartItems) {
 
   logo.appendChild(logoText);
 
-  // Search Field
-
   const search = document.createElement("div");
   search.classList.add("search");
   search.id = "search";
@@ -344,19 +351,6 @@ export function headerComponent(cartItems) {
   searchField.style.border = "none";
 
   search.appendChild(searchField);
-
-  const searchButton = document.createElement("button");
-  searchButton.classList.add("search-button");
-  searchButton.id = "search-button";
-  searchButton.textContent = "Search";
-  searchButton.style.height = "100%";
-  searchButton.style.border = "none";
-  searchButton.style.borderRadius = "8px";
-  searchButton.style.cursor = "pointer";
-
-  search.appendChild(searchButton);
-
-  // Navigation Button Field
 
   const navButton = document.createElement("div");
   navButton.classList.add("btn");
@@ -390,16 +384,12 @@ export function headerComponent(cartItems) {
 
   navButton.appendChild(navButtonCart);
 
-  // header container logo, search and login + cart Button
-
   headerContainer.appendChild(logo);
   headerContainer.appendChild(search);
   headerContainer.appendChild(navButton);
 
   header.appendChild(headerContainer);
   container.appendChild(header);
-
-  // styling
 
   document.getElementById("header-container").style.margin = "0 20%";
   document.getElementById("header-container").style.display = "flex";
@@ -420,4 +410,27 @@ export function headerComponent(cartItems) {
   for (let i = 0; i < element.length; i++) {
     element[i].style.margin = "0 5px";
   }
+
+  let debounceTimer;
+
+  const performSearch = (query) => {
+    const filteredProducts = products.filter((product) =>
+      product.title.toLowerCase().includes(query.toLowerCase())
+    );
+    const productContainer = document.getElementById("product-container");
+    productContainer.innerHTML = "";
+    filteredProducts.forEach((prod) => {
+      productCardFunction(prod, productContainer);
+    });
+  };
+
+  searchField.addEventListener("input", (event) => {
+    const query = event.target.value;
+
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+  });
 }
