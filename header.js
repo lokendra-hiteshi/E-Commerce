@@ -1,6 +1,8 @@
 import { createModal, productCardFunction } from "./home.js";
 import { getCart } from "./home.js";
 import { updateCart } from "./home.js";
+
+
 const openLoginModel = () => {
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";

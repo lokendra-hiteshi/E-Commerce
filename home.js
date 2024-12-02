@@ -1,4 +1,3 @@
-import { cartDrawer } from "./header.js";
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -227,9 +226,9 @@ export const productCardFunction = (product, productContainer) => {
     event.stopPropagation();
 
     const action = isInCart() ? "remove" : "add";
-    const updatedCartItems = updateCart(product, action);
+     updateCart(product, action);
     updateButtonState();
-    // cartDrawer(updatedCartItems, () => homeComponent());
+  
   };
   productCard.onclick = () => createModal(product);
   productCard.append(
